@@ -1,6 +1,6 @@
 package vfs;
 
-import utility.UserInput;
+import utility.Utility;
 
 import java.util.*;
 import java.io.*;
@@ -19,7 +19,7 @@ public class Directory {
                         // ponovo, pretpostavljamo da su svi fajlovi tekstualni i da ce svaki prepisan bajt biti validan char
                         String content = new String(Files.readAllBytes(file.toPath()));
                         System.out.println("Odaberite mod pristupa za fajl " + file.getName() + " (ro -- read-only  |  rw -- read-write):");
-                        String mode = UserInput.userInputScanner.nextLine();
+                        String mode = Utility.userInputScanner.nextLine();
                         files.add(new VFSFile(file.getName(), content, mode));
                     } catch (IOException e) {
                         System.out.printf("Navedeni direktorijum (%s) sadrzi fajl koji se ne moze procitati (%s)%n", path, file.getName());

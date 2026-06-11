@@ -1,15 +1,22 @@
+package agent;
+
+import agent.Slots;
+import java.util.*;
+
 public class Agent extends Thread {
     private static int numInstances = 0;
 
     private final int agentId;
     private final int agentPriority;
     private final int agentArrival;
+    private final Slots slotsRef;
     // (prefiksovani sa 'agent' zbog konflikata sa Thread klasom)
 
-    public Agent(int priority, int arrival) {
+    public Agent(int priority, int arrival, Slots slotsRef) {
         this.agentId = ++numInstances;
         this.agentPriority = priority;
         this.agentArrival = arrival;
+        this.slotsRef = slotsRef;
     }
 
     public int getAgentId() { return agentId; }
@@ -20,7 +27,9 @@ public class Agent extends Thread {
     public void run(){
         try {
             Thread.sleep(agentArrival * 1000L);
-            System.out.println("Agent " + agentId + " je stigao [prioritet -- %d]".formatted(agentPriority));
+            System.out.printf("Agent %d (A%d) je stigao [prioritet -- %d]%n", agentId, agentId, agentPriority);
+            this.slotsRef.add(this);
+
         } catch (InterruptedException e) {
 
         }
