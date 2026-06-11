@@ -13,4 +13,7 @@ public final class Operation {
         for (int i = 1; i < parts.length; i++)
             this.args.add(parts[i]);
     }
+
+    public String getType() { return type; }
+    public List<String> getArgs() { return args; }
 }

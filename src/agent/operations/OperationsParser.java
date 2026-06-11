@@ -5,7 +5,6 @@ import java.io.*;
 import java.nio.*;
 import java.nio.file.*;
 
-// operation file content example:
 // THINK 3
 // OPEN /shared/a.txt read as f
 // READ f
@@ -15,8 +14,8 @@ import java.nio.file.*;
 // CLOSE out
 
 public class OperationsParser {
-    public static List<Operation> parseOperations(File agentOperationsFile) {
-        List<Operation> operations = new ArrayList<>();
+    public static Queue<Operation> parseOperations(File agentOperationsFile) {
+        Queue<Operation> operations = new LinkedList<>();
         try {
             List<String> lines = Files.readAllLines(agentOperationsFile.toPath());
             for (String line : lines) {

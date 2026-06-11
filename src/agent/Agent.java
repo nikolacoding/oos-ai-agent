@@ -1,7 +1,9 @@
 package agent;
 
 import agent.Slots;
+import agent.operations.*;
 import java.util.*;
+import java.io.*;
 
 public class Agent extends Thread {
     private static int numInstances = 0;
@@ -9,6 +11,8 @@ public class Agent extends Thread {
     private final int agentId;
     private final int agentPriority;
     private final int agentArrival;
+    private Queue<Operation> operations = new LinkedList<>();
+
     private final Slots slotsRef;
     // (prefiksovani sa 'agent' zbog konflikata sa Thread klasom)
 
@@ -17,6 +21,7 @@ public class Agent extends Thread {
         this.agentPriority = priority;
         this.agentArrival = arrival;
         this.slotsRef = slotsRef;
+        this.operations = OperationsParser.parseOperations(new File(String.format("agent_operations/%d.txt", agentId)));
     }
 
     public int getAgentId() { return agentId; }
@@ -30,15 +35,37 @@ public class Agent extends Thread {
             System.out.printf("Agent %d (A%d) je stigao [prioritet -- %d]%n", agentId, agentId, agentPriority);
             this.slotsRef.add(this);
 
-        } catch (InterruptedException e) {
+            while (!operations.isEmpty()) {
+                Operation operation = operations.poll();
+                this.runOperation(operation);
+            }
 
+            System.out.printf("A%d nema vise operacija i implicitno zavrsava sa radom.\n", agentId);
+
+        } catch (InterruptedException e) { }
+    }
+
+    private void runOperation(Operation operation) {
+        switch (operation.getType()) {
+            case "THINK":
+                int duration = Integer.parseInt(operation.getArgs().getFirst());
+                System.out.printf("Agent A%s razmislja... (%dsec)\n", agentId, duration);
+                this.think(duration);
+                break;
+            case "OPEN":
+                this.open(operation.getArgs().get(0), operation.getArgs().get(2), operation.getArgs().get(1));
+                break;
+            case "READ":
+                this.read(operation.getArgs().getFirst());
+                break;
         }
     }
 
-    public void think(int durationMs){
-        int current = 0;
-        while (current++ < durationMs) {
-            // razmisljanje
+    public void think(int duration){
+        try {
+            Thread.sleep(duration * 1000L);
+        } catch (InterruptedException e) {
+
         }
     }
 
