@@ -6,9 +6,9 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 
-public class Directory {
+public class VFS {
     private List<VFSFile> files = new ArrayList<>();
-    public Directory(String path){
+    public VFS(String path, String mode){
         // ucitavanje fajlova iz direktorijuma path (moutovanje) u memoriju
         // promjene fajlova u memoriji se nece odraziti na fajlove na disku
         File dir = new File(path);
@@ -18,17 +18,17 @@ public class Directory {
                     try {
                         // ponovo, pretpostavljamo da su svi fajlovi tekstualni i da ce svaki prepisan bajt biti validan char
                         String content = new String(Files.readAllBytes(file.toPath()));
-                        System.out.println("Odaberite mod pristupa za fajl " + file.getName() + " (ro -- read-only  |  rw -- read-write):");
-                        String mode = Utility.userInputScanner.nextLine();
                         files.add(new VFSFile(file.getName(), content, mode));
                     } catch (IOException e) {
-                        System.out.printf("Navedeni direktorijum (%s) sadrzi fajl koji se ne moze procitati (%s)%n", path, file.getName());
+                        // debug linija
+                        System.out.printf("Navedeni direktorijum (%s) sadrzi fajl koji se ne moze procitati (%s)\n", path, file.getName());
                     }
                 }
             }
+            System.out.printf("> Mountovan direktorijum %s sa %d fajlova.\n", dir.getAbsolutePath(), files.size());
         }
         else {
-            System.out.printf("Navedeni direktorijum (%s) nije validan.%n", path);
+            System.out.printf("[!] Navedeni direktorijum (%s) nije validan.\n", path);
         }
     }
 }

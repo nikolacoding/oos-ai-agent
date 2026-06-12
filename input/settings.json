@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "max_running_agents": 3
+  },
+  "vfs": {
+    "mounts": [
+      {
+        "path": "input/files/primary", "mode": "ro"
+      },
+      {
+        "path": "input/files/secondary", "mode": "rw"
+      }
+    ]
+  }
+}

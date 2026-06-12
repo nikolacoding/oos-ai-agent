@@ -13,7 +13,7 @@ public final class Slots extends ArrayList<Agent> {
     @Override
     public boolean add(Agent agent) {
         if (this.size() < maxCapacity) {
-            System.out.printf("slot[%d] <- A%d%n", this.size(), agent.getAgentId());
+            System.out.printf("slot[%d] <- A%d\n", this.size(), agent.getAgentId());
             return super.add(agent);
         } else {
             return false;

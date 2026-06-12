@@ -1,5 +1,6 @@
 package agent;
 
+import utility.Constants;
 import agent.Slots;
 import agent.operations.*;
 import java.util.*;
@@ -11,17 +12,17 @@ public class Agent extends Thread {
     private final int agentId;
     private final int agentPriority;
     private final int agentArrival;
-    private Queue<Operation> operations = new LinkedList<>();
-
-    private final Slots slotsRef;
     // (prefiksovani sa 'agent' zbog konflikata sa Thread klasom)
 
-    public Agent(int priority, int arrival, Slots slotsRef) {
+    private Queue<Operation> operations = new LinkedList<>();
+    private final Slots slotsRef;
+
+    public Agent(int priority, int arrival, Slots slotsRef, String preset) {
         this.agentId = ++numInstances;
         this.agentPriority = priority;
         this.agentArrival = arrival;
         this.slotsRef = slotsRef;
-        this.operations = OperationsParser.parseOperations(new File(String.format("agent_operations/%d.txt", agentId)));
+        this.operations = OperationsParser.parseOperations(new File(String.format("%s%s/%d.txt", Constants.AGENT_OPERATIONS_ROOT, preset,  agentId)));
     }
 
     public int getAgentId() { return agentId; }
@@ -32,7 +33,7 @@ public class Agent extends Thread {
     public void run(){
         try {
             Thread.sleep(agentArrival * 1000L);
-            System.out.printf("Agent %d (A%d) je stigao [prioritet -- %d]%n", agentId, agentId, agentPriority);
+            System.out.printf("Agent %d (A%d) je stigao [prioritet -- %d]\n", agentId, agentId, agentPriority);
             this.slotsRef.add(this);
 
             while (!operations.isEmpty()) {
@@ -71,9 +72,10 @@ public class Agent extends Thread {
 
     public void open(String path, String alias, String mode){
         // otvaranje
+        System.out.printf("Agent A%s otvara fajl %s sa modom %s i aliasom %s.\n", agentId, path, mode, alias);
     }
 
     public void read(String alias){
-        // citanje
+        System.out.printf("Agent A%s cita fajl alijasa %s.\n", agentId, alias);
     }
 }
