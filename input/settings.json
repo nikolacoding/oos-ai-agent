@@ -1,6 +1,6 @@
 {
   "settings": {
-    "max_running_agents": 3
+    "max_running_agents": 2
   },
   "vfs": {
     "mounts": [

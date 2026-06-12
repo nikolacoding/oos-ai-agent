@@ -31,4 +31,16 @@ public class VFS {
             System.out.printf("[!] Navedeni direktorijum (%s) nije validan.\n", path);
         }
     }
+
+    public List<VFSFile> getFiles() { return files; }
+
+    public VFSFile findFile(String fileName) {
+        for (VFSFile file : files) {
+            if (file.getName().equals(fileName)) {
+                return file;
+            }
+        }
+
+        return null;
+    }
 }

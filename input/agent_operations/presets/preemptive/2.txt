@@ -1,0 +1,6 @@
+THINK 2
+OPEN input/files/primary/racun.txt write as G
+APPEND G " A2 preuzima...?"
+WRITE G "A2 sadrzaj..."
+READ G
+CLOSE G

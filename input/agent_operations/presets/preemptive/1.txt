@@ -1,0 +1,7 @@
+THINK 1
+OPEN input/files/primary/racun.txt write as F
+WRITE F "A1 grabi prvi"
+THINK 1
+OPEN input/files/primary/racun.txt write as H
+READ F
+CLOSE F

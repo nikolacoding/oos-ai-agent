@@ -1,1 +1,5 @@
 THINK 3
+OPEN input/files/primary/racun.txt write as F
+WRITE F "[SAKRIVEN RACUN]"
+READ F
+CLOSE F

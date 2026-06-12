@@ -37,7 +37,7 @@ public class OperationsParser {
     public static Queue<Operation> generateNRandomOperations(int n) {
         Queue<Operation> operations = new LinkedList<>();
         for (int i = 0; i < n; i++) {
-            int opType = Utility.random.nextInt(5);
+            int opType = Utility.random.nextInt(6);
             switch (opType) {
                 case 0:
                     operations.add(new Operation(String.format("THINK %d", Utility.random.nextInt(5) + 1)));

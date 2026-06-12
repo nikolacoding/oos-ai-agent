@@ -1,0 +1,8 @@
+THINK 1
+OPEN input/files/secondary/skole.txt write as S
+THINK 1
+OPEN input/files/primary/racun.txt write as R
+READ S
+READ R
+CLOSE R
+CLOSE S

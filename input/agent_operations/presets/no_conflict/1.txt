@@ -1,1 +1,9 @@
-THINK 5
+THINK 2
+OPEN input/files/secondary/skole.txt write as s
+READ s
+WRITE s "nova skola"
+CLOSE s
+OPEN input/files/secondary/skole.txt write as s2
+READ s2
+READ Q
+READ R
