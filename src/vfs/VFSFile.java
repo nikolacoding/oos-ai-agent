@@ -1,7 +1,5 @@
 package vfs;
 
-import utility.Constants;
-
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -9,17 +7,10 @@ import java.util.Locale;
 public final class VFSFile {
     private final String name;
     private String content;
-    private final String mode;
 
-    public VFSFile(String name, String content, String mode) {
+    public VFSFile(String name, String content) {
         this.name = name;
         this.content = content;
-
-        if (mode.equals("ro") || mode.equals("rw")) {
-            this.mode = mode;
-        } else {
-            this.mode = Constants.DEFAULT_FILE_MODE;
-        }
     }
 
     public synchronized String getContentFormatted(String prefix) {
@@ -43,6 +34,4 @@ public final class VFSFile {
     }
 
     public String getName() { return name; }
-    public String getContent() { return content; }
-    public String getMode() { return mode; }
 }

@@ -1,12 +1,13 @@
 package agent.operations;
 
-import utility.Utility;
-
 import java.util.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.file.*;
 
+import utility.Utility;
+
+// >>> primjer ulaznog fajla sa komandama:
 // THINK 3
 // OPEN /shared/a.txt read as f
 // READ f
@@ -25,9 +26,9 @@ public class OperationsParser {
                     operations.add(new Operation(line));
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException _) {
             // debug linija
-            System.out.printf("Navedeni fajl sa operacijama agenta (%s) se ne moze procitati. Generisu se nasumicne operacije.\n", agentOperationsFile.getPath());
+            // System.out.printf("Navedeni fajl sa operacijama agenta (%s) se ne moze procitati. Generisu se nasumicne operacije.\n", agentOperationsFile.getPath());
 
             return generateNRandomOperations(5);
         }
@@ -37,7 +38,7 @@ public class OperationsParser {
     public static Queue<Operation> generateNRandomOperations(int n) {
         Queue<Operation> operations = new LinkedList<>();
         for (int i = 0; i < n; i++) {
-            int opType = Utility.random.nextInt(6);
+            int opType = Utility.random.nextInt(5);
             switch (opType) {
                 case 0:
                     operations.add(new Operation(String.format("THINK %d", Utility.random.nextInt(5) + 1)));

@@ -8,7 +8,7 @@ public class AccessDecision {
     private final boolean interrupted;
     private final String cycleDescription;
 
-    private AccessDecision(boolean granted, boolean waited, int blockingAgentId, boolean interrupted, String cycleDescription) {
+    public AccessDecision(boolean granted, boolean waited, int blockingAgentId, boolean interrupted, String cycleDescription) {
         this.granted = granted;
         this.waited = waited;
         this.blockingAgentId = blockingAgentId;
@@ -30,7 +30,6 @@ public class AccessDecision {
 
     public boolean isGranted() { return granted; }
     public boolean isWaited() { return waited; }
-    public int getBlockingAgentId() { return blockingAgentId; }
     public boolean isInterrupted() { return interrupted; }
     public String getCycleDescription() { return cycleDescription; }
 }

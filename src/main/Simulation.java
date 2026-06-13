@@ -1,18 +1,18 @@
 package main;
 
-import agent.AgentStats;
-import agent.conflict.AccessDecision;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
 import com.fasterxml.jackson.databind.*;
 
+import agent.AgentStats;
+import agent.conflict.AccessDecision;
 import agent.Agent;
 import agent.Slots;
 import exceptions.MountingExceptions;
 import utility.Utility;
 import vfs.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 
 public class Simulation extends Thread {
 
@@ -34,10 +34,13 @@ public class Simulation extends Thread {
         this.preset = preset;
         this.settingsPath = settingsPath;
         this.startTime = System.currentTimeMillis();
+
+        System.out.printf("> Pripremljena simulacija sa presetom '%s'.\n", preset);
     }
 
-    public List<VFS> getMounts() { return this.mounts; }
     private long getStartTime(){ return this.startTime; }
+    public Slots getSlots(){ return this.slots; }
+
     public VFSFile resolveFile(String path) {
         String fileName = new File(path).getName();
 
@@ -58,7 +61,7 @@ public class Simulation extends Thread {
         this.parseSettings();
         System.out.println("=== Simulacija je pocela ===");
         for (int i = 0; i < maxRunningAgents; i++) {
-            Agent agent = new Agent(Utility.random.nextInt(3), i + Utility.random.nextInt(5) * i, this.slots, this, this.preset);
+            Agent agent = new Agent(Utility.random.nextInt(4), i + Utility.random.nextInt(5) * i, this.slots, this, this.preset);
             this.agents.add(agent);
         }
 
@@ -71,10 +74,6 @@ public class Simulation extends Thread {
 
         System.out.println("=== Simulacija je zavrsila ===");
         this.displayStats();
-    }
-
-    public boolean isFileInMounts(String name) {
-        return this.resolveFile(name) != null;
     }
 
     public synchronized void registerAgent(Agent agent) {
@@ -162,7 +161,7 @@ public class Simulation extends Thread {
 
             try {
                 wait();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 this.waitFor.remove(requesterId);
                 return AccessDecision.interrupted(ownerId);
@@ -243,10 +242,10 @@ public class Simulation extends Thread {
                 if (pathNode.isMissingNode() || modeNode.isMissingNode() || !pathNode.isTextual() || !modeNode.isTextual())
                     throw new MountingExceptions.IllegalMountStructureException(this.settingsPath);
 
-                var newMount = new VFS(pathNode.asText(), modeNode.asText());
+                var newMount = new VFS(pathNode.asText());
                 this.mounts.add(newMount);
             }
-        } catch (IOException ie) {
+        } catch (IOException _) {
             throw new MountingExceptions.UnreadableSettingsFileException("Navedeni settings fajl (%s) se ne moze procitati.");
         }
     }
@@ -254,6 +253,8 @@ public class Simulation extends Thread {
     public long getCurrentSimulationRuntime(){
         return (System.currentTimeMillis() - this.getStartTime()) / 1000L;
     }
+
+    public Map<Integer, AgentStats> getAgentStats() { return this.agentStats; }
 
     private void displayStats() {
         System.out.println("\n=== Gantova karta ===");

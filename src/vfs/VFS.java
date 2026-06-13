@@ -1,27 +1,25 @@
 package vfs;
 
-import utility.Utility;
-
 import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 
 public class VFS {
-    private List<VFSFile> files = new ArrayList<>();
-    public VFS(String path, String mode){
+    private final List<VFSFile> files = new ArrayList<>();
+    public VFS(String path){
         // ucitavanje fajlova iz direktorijuma path (moutovanje) u memoriju
         // promjene fajlova u memoriji se nece odraziti na fajlove na disku
         File dir = new File(path);
         if (dir.isDirectory()) {
-            for (File file : dir.listFiles()) {
+            for (File file : Objects.requireNonNull(dir.listFiles())) {
                 if (file.isFile()) {
                     try {
                         // ponovo, pretpostavljamo da su svi fajlovi tekstualni i da ce svaki prepisan bajt biti validan char
                         String content = new String(Files.readAllBytes(file.toPath()));
-                        files.add(new VFSFile(file.getName(), content, mode));
-                    } catch (IOException e) {
+                        files.add(new VFSFile(file.getName(), content));
+                    } catch (IOException _) {
                         // debug linija
-                        System.out.printf("Navedeni direktorijum (%s) sadrzi fajl koji se ne moze procitati (%s)\n", path, file.getName());
+                        // System.out.printf("Navedeni direktorijum (%s) sadrzi fajl koji se ne moze procitati (%s)\n", path, file.getName());
                     }
                 }
             }

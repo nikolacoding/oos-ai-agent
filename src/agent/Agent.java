@@ -1,13 +1,13 @@
 package agent;
 
+import java.util.*;
+import java.io.*;
+
 import utility.Constants;
 import main.Simulation;
 import agent.operations.*;
 import vfs.VFSFile;
 import agent.conflict.AccessDecision;
-
-import java.util.*;
-import java.io.*;
 
 public class Agent extends Thread {
     private static int numInstances = 0;

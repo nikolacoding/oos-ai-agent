@@ -1,0 +1,2 @@
+THINK 5
+OPEN /macka/pas.txt append as mp
