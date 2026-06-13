@@ -161,7 +161,7 @@ public class Simulation extends Thread {
 
             try {
                 wait();
-            } catch (InterruptedException ie) {
+            } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
                 this.waitFor.remove(requesterId);
                 return AccessDecision.interrupted(ownerId);
