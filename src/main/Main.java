@@ -2,15 +2,11 @@ package main;
 
 import utility.Constants;
 
-// main.Simulation is in the default package, same as main.Main
 public class Main {
     public static void main(String[] args) {
 
-        if (args[0].toLowerCase().equals("no_conflict") ||
-                args[0].toLowerCase().equals("preemptive") ||
-                    args[0].toLowerCase().equals("cycle")) {
-        } else {
-            System.out.println("Nije odabran validan preset (no_conflict | preemptive | cycle).");
+        if (args.length == 0 || !Constants.PRESET_LIST.contains(args[0])) {
+            System.out.println("[!] Niste naveli validan preset kao argument. Dozvoljeni preseti su: " + Constants.PRESET_LIST);
             return;
         }
 

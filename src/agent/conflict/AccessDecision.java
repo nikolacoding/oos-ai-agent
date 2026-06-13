@@ -1,4 +1,4 @@
-package main;
+package agent.conflict;
 
 // holder klasa za pracenje odluka o preuzimanju odnosno blokiranju
 public class AccessDecision {

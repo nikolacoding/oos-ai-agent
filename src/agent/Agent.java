@@ -2,11 +2,9 @@ package agent;
 
 import utility.Constants;
 import main.Simulation;
-import agent.Slots;
 import agent.operations.*;
-import utility.FileHandler;
 import vfs.VFSFile;
-import main.AccessDecision;
+import agent.conflict.AccessDecision;
 
 import java.util.*;
 import java.io.*;
@@ -23,6 +21,7 @@ public class Agent extends Thread {
     private final Slots slotsRef;
     private final Simulation simulationRef;
 
+    // pracenje otvorenih fajlova za svakog individualnog agenta jer mogu da dijele razlicite fajlove sa razlicitim rezimima i alijasima
     private static final class OpenFile {
         private final VFSFile file;
         private final String mode;
@@ -54,7 +53,7 @@ public class Agent extends Thread {
             Thread.sleep(agentArrival * 1000L);
             this.simulationRef.registerAgent(this);
             this.simulationRef.markAgentStarted(this.agentId);
-            System.out.printf("Agent %d (A%d) je stigao [prioritet -- %d]\n", agentId, agentId, agentPriority);
+            System.out.printf("[%d] Agent %d (A%d) je stigao [prioritet -- %d]\n", this.simulationRef.getCurrentSimulationRuntime(), agentId, agentId, agentPriority);
             this.slotsRef.add(this);
 
             while (!operations.isEmpty()) {
@@ -66,7 +65,7 @@ public class Agent extends Thread {
             this.simulationRef.markAgentFinished(this.agentId);
             System.out.printf("[%d] A%d zavrsava sa radom.\n", this.simulationRef.getCurrentSimulationRuntime(), agentId);
 
-        } catch (InterruptedException e) { }
+        } catch (InterruptedException _) { }
     }
 
     private void runOperation(Operation operation) {
@@ -199,7 +198,7 @@ public class Agent extends Thread {
             return;
         }
 
-        Integer owner = this.simulationRef.getOwnerId(openedFile.file);
+        Integer owner = this.simulationRef.getOwnerId(openedFile.file); // wrapper zbog null provjere
         if (owner == null || owner != this.agentId) {
             System.out.printf("[%d] A%d nema pristup '%s' za dodavanje jer ga je preuzeo A%d.\n", this.simulationRef.getCurrentSimulationRuntime(), this.agentId, alias, owner == null ? -1 : owner);
             this.openedFiles.remove(alias);

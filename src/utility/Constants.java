@@ -1,5 +1,7 @@
 package utility;
 
+import java.util.*;
+
 public class Constants {
     public static final String DEFAULT_FILE_MODE = "ro";
 
@@ -7,4 +9,6 @@ public class Constants {
     public static final String AGENT_OPERATIONS_ROOT = "input/agent_operations/presets/";
 
     public static final long OPERATION_DELAY = 1000L;
+
+    public static final List<String> PRESET_LIST = Arrays.asList("no_conflict", "preemptive", "cycle");
 }

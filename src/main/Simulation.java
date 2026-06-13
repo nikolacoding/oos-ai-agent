@@ -1,9 +1,12 @@
 package main;
 
+import agent.AgentStats;
+import agent.conflict.AccessDecision;
 import com.fasterxml.jackson.databind.*;
 
 import agent.Agent;
 import agent.Slots;
+import exceptions.MountingExceptions;
 import utility.Utility;
 import vfs.*;
 
@@ -25,11 +28,12 @@ public class Simulation extends Thread {
     private final Map<Integer, AgentStats> agentStats = new HashMap<>();
     private final List<String> deniedLockEvents = new ArrayList<>();
 
-    private final long startTime = System.currentTimeMillis();
+    private final long startTime;
 
     public Simulation(String settingsPath, String preset) {
         this.preset = preset;
         this.settingsPath = settingsPath;
+        this.startTime = System.currentTimeMillis();
     }
 
     public List<VFS> getMounts() { return this.mounts; }
@@ -52,7 +56,7 @@ public class Simulation extends Thread {
     @Override
     public void run() {
         this.parseSettings();
-        System.out.println("== Simulacija je pocela ==");
+        System.out.println("=== Simulacija je pocela ===");
         for (int i = 0; i < maxRunningAgents; i++) {
             Agent agent = new Agent(Utility.random.nextInt(3), i + Utility.random.nextInt(5) * i, this.slots, this, this.preset);
             this.agents.add(agent);
@@ -65,7 +69,7 @@ public class Simulation extends Thread {
             } catch (InterruptedException _) { }
         });
 
-        System.out.println("== Simulacija je zavrsila ==");
+        System.out.println("=== Simulacija je zavrsila ===");
         this.displayStats();
     }
 
@@ -79,14 +83,14 @@ public class Simulation extends Thread {
 
     public synchronized void markAgentStarted(int agentId) {
         this.agentStats.computeIfPresent(agentId, (id, stats) -> {
-            stats.startedAtMs = System.currentTimeMillis();
+            stats.setStartedAtMs(stats.getArrival());
             return stats;
         });
     }
 
     public synchronized void markAgentFinished(int agentId) {
         this.agentStats.computeIfPresent(agentId, (id, stats) -> {
-            stats.finishedAtMs = System.currentTimeMillis();
+            stats.setFinishedAtMs(System.currentTimeMillis());
             return stats;
         });
     }
@@ -97,14 +101,14 @@ public class Simulation extends Thread {
         }
 
         this.agentStats.computeIfPresent(agentId, (id, stats) -> {
-            stats.waitedMs += waitedMs;
+            stats.setWaitedMs(stats.getWaitedMs() + waitedMs);
             return stats;
         });
     }
 
     public synchronized void recordDeniedLock(int agentId, String path, String cycleDescription) {
         this.agentStats.computeIfPresent(agentId, (id, stats) -> {
-            stats.blockedDenials++;
+            stats.setBlockedDenials(stats.getBlockedDenials() + 1);
             return stats;
         });
         this.deniedLockEvents.add(String.format("[%d] A%d nije dobio zakljucavanje nad %s zbog ciklusa %s",
@@ -124,7 +128,8 @@ public class Simulation extends Thread {
             return AccessDecision.granted(false, ownerId);
         }
 
-        // PREEMPTIVE: if preset allows and requester has better (lower) priority, take over immediately
+        // preuzimanje u slucaju viseg prioriteta
+        // TODO: edge case sa istim prioritetom
         if ("preemptive".equalsIgnoreCase(this.preset)) {
             Agent ownerAgent = null;
             for (Agent a : this.agents) {
@@ -132,13 +137,11 @@ public class Simulation extends Thread {
             }
             int ownerPriority = ownerAgent == null ? Integer.MAX_VALUE : ownerAgent.getAgentPriority();
             if (agent.getAgentPriority() < ownerPriority) {
-                // transfer ownership to requester
                 this.fileOwners.put(file, requesterId);
-                // record preemption stat
-                this.agentStats.computeIfPresent(requesterId, (id, stats) -> { stats.preemptions++; return stats; });
+                this.agentStats.computeIfPresent(requesterId, (id, stats) -> { stats.setPreemptions(stats.getPreemptions() + 1); return stats; });
                 System.out.printf("[%d] Agent A%d preuzima '%s' od A%d <- zakljucano.\n",
                         this.getCurrentSimulationRuntime(), requesterId, path, ownerId);
-                // notify displaced owner (so it can drop aliases)
+
                 if (ownerAgent != null) {
                     ownerAgent.notifyPreempted(file, requesterId);
                 }
@@ -192,7 +195,7 @@ public class Simulation extends Thread {
         Set<Integer> visited = new HashSet<>();
         Integer current = startAgentId;
 
-        while (current != null && visited.add(current)) {
+        while (visited.add(current)) {
             path.add(current);
             Integer next = this.waitFor.get(current);
             if (next == null) {
@@ -213,39 +216,38 @@ public class Simulation extends Thread {
 
         try {
             JsonNode root = mapper.readTree(new File(this.settingsPath));
-            if (root == null) {
-                throw new IllegalStateException(String.format("Navedeni settings fajl (%s) je prazan.", this.settingsPath));
-            }
+
+            if (root == null)
+                throw new MountingExceptions.EmptySettingsFileException(this.settingsPath);
 
             JsonNode settingsNode = root.path("settings");
             JsonNode maxRunningAgentsNode = settingsNode.path("max_running_agents");
-            if (settingsNode.isMissingNode() || !settingsNode.isObject() || maxRunningAgentsNode.isMissingNode() || !maxRunningAgentsNode.canConvertToInt()) {
-                throw new IllegalStateException(String.format("Navedeni settings fajl (%s) nema validan settings.max_running_agents zapis.", this.settingsPath));
-            }
+
+            if (settingsNode.isMissingNode() || !settingsNode.isObject() || maxRunningAgentsNode.isMissingNode() || !maxRunningAgentsNode.canConvertToInt())
+                throw new MountingExceptions.IllegalMaxRunningAgentsException(this.settingsPath);
 
             this.maxRunningAgents = maxRunningAgentsNode.asInt();
             this.slots = new Slots(this.maxRunningAgents);
 
             JsonNode vfsNode = root.path("vfs");
             JsonNode mountsNode = vfsNode.path("mounts");
-            if (vfsNode.isMissingNode() || !vfsNode.isObject() || mountsNode.isMissingNode() || !mountsNode.isArray()) {
-                throw new IllegalStateException(String.format("Navedeni settings fajl (%s) nema validan vfs.mounts zapis.", this.settingsPath));
-            }
+
+            if (vfsNode.isMissingNode() || !vfsNode.isObject() || mountsNode.isMissingNode() || !mountsNode.isArray())
+                throw new MountingExceptions.IllegalMountsException(this.settingsPath);
 
             this.mounts.clear();
             for (JsonNode mountNode : mountsNode) {
                 JsonNode pathNode = mountNode.path("path");
                 JsonNode modeNode = mountNode.path("mode");
 
-                if (pathNode.isMissingNode() || modeNode.isMissingNode() || !pathNode.isTextual() || !modeNode.isTextual()) {
-                    throw new IllegalStateException(String.format("Navedeni settings fajl (%s) sadrzi neispravan mount zapis.", this.settingsPath));
-                }
+                if (pathNode.isMissingNode() || modeNode.isMissingNode() || !pathNode.isTextual() || !modeNode.isTextual())
+                    throw new MountingExceptions.IllegalMountStructureException(this.settingsPath);
 
                 var newMount = new VFS(pathNode.asText(), modeNode.asText());
                 this.mounts.add(newMount);
             }
-        } catch (IOException e) {
-            throw new IllegalStateException(String.format("Navedeni settings fajl (%s) se ne moze procitati.", this.settingsPath), e);
+        } catch (IOException ie) {
+            throw new MountingExceptions.UnreadableSettingsFileException("Navedeni settings fajl (%s) se ne moze procitati.");
         }
     }
 
@@ -254,33 +256,37 @@ public class Simulation extends Thread {
     }
 
     private void displayStats() {
-        System.out.println("=== Gantova karta ===");
+        System.out.println("\n=== Gantova karta ===");
         for (int i = 0; i < this.slots.size(); i++) {
             Agent agent = this.slots.get(i);
             AgentStats stats = this.agentStats.get(agent.getAgentId());
-            long start = stats.startedAtMs == 0 ? agent.getAgentArrival() * 1000L : stats.startedAtMs - this.startTime;
-            long end = stats.finishedAtMs == 0 ? getCurrentSimulationRuntime() * 1000L : stats.finishedAtMs - this.startTime;
-            System.out.printf("slot_%d: [%d,%d] A%d%n", i + 1, start / 1000L, end / 1000L, agent.getAgentId());
+            long start = stats.getStartedAtMs() == 0 ? agent.getAgentArrival() * 1000L : stats.getStartedAtMs() - this.startTime;
+            long end = stats.getFinishedAtMs() == 0 ? getCurrentSimulationRuntime() * 1000L : stats.getFinishedAtMs() - this.startTime;
+            System.out.printf("slot_%d: [%d,%d] A%d\n", i + 1, start / 1000L, end / 1000L, agent.getAgentId());
         }
+        System.out.println();
 
         System.out.println("=== Zavrsno stanje agenata ===");
-        System.out.println("Agent\tStatus\tDolazak\tPocetak\t\tKraj\tCekanje\tBlokiran\tPreuzimanja");
+        System.out.println("Agent\tStatus\t\tDolazak\t\tPocetak\t\tKraj\tCekanje\t\tBlokiran\tPreuzimanja");
         for (AgentStats stats : this.agentStats.values()) {
-            long start = stats.startedAtMs == 0 ? 0 : (stats.startedAtMs - this.startTime) / 1000L;
-            long end = stats.finishedAtMs == 0 ? 0 : (stats.finishedAtMs - this.startTime) / 1000L;
-            System.out.printf("A%d\t\t%s\t\t%d\t\t%d\t\t%d\t\t%.2f\t\t%d\t\t%d%n",
-                    stats.agentId,
-                    stats.finishedAtMs > 0 ? "zavrsen" : "u radu",
-                    stats.arrival,
+            long start = stats.getArrival();
+            long end = stats.getFinishedAtMs() == 0 ? 0 : (stats.getFinishedAtMs() - this.startTime) / 1000L;
+
+            // upitno je da li ova indentacija radi pravilno na svim sistemima i nacinima pokretanja
+            System.out.printf("A%d\t\t%s\t\t%d\t\t\t%d\t\t\t%d\t\t%.2f\t\t%d\t\t\t%d\n",
+                    stats.getAgentId(),
+                    stats.getFinishedAtMs() > 0 ? "zavrsen" : "u radu",
+                    stats.getArrival(),
                     start,
                     end,
-                    stats.waitedMs / 1000.0,
-                    stats.blockedDenials,
-                    stats.preemptions);
+                    stats.getWaitedMs() / 1000.0,
+                    stats.getBlockedDenials(),
+                    stats.getPreemptions());
         }
+        System.out.println();
 
         if (!this.deniedLockEvents.isEmpty()) {
-            System.out.println("=== Odbijena zakljucavanja ===");
+            System.out.println("=== Odbijena zakljucavanja/preuzimanja ===");
             this.deniedLockEvents.forEach(System.out::println);
         }
 
@@ -291,14 +297,12 @@ public class Simulation extends Thread {
             }
         }
 
-        double avgWaiting = this.agentStats.values().stream().mapToDouble(s -> s.waitedMs / 1000.0).average().orElse(0.0);
-        double avgBlocking = this.agentStats.values().stream().mapToDouble(s -> s.blockedDenials).average().orElse(0.0);
+        double avgWaiting = this.agentStats.values().stream().mapToDouble(s -> s.getWaitedMs() / 1000.0).average().orElse(0.0);
+        double avgBlocking = this.agentStats.values().stream().mapToDouble(AgentStats::getBlockedDenials).average().orElse(0.0);
 
-        System.out.println("=== Statistika ===");
-        System.out.printf("Broj sprijecenih zastoja: %d%n", this.deniedLockEvents.size());
-        System.out.printf("Prosjecno vrijeme cekanja: %.2f%n", avgWaiting);
-        System.out.printf("Prosjecno vrijeme blokiranja: %.2f%n", avgBlocking);
+        System.out.println("=== Statistika konflikta ===");
+        System.out.printf("Broj sprijecenih zastoja: %d\n", this.deniedLockEvents.size());
+        System.out.printf("Prosjecno vrijeme cekanja: %.2f\n", avgWaiting);
+        System.out.printf("Prosjecno vrijeme blokiranja: %.2f\n", avgBlocking);
     }
-
-
 }
